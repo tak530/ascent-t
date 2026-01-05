@@ -1,0 +1,227 @@
+"use client";
+
+import { useEffect, useMemo, useRef, useState } from "react";
+import Link from "next/link";
+
+type Phase = "A" | "REST1" | "B" | "REST2";
+
+function fmt(sec: number) {
+  const m = Math.floor(sec / 60);
+  const s = sec % 60;
+  return `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
+}
+
+function label(phase: Phase) {
+  if (phase === "A") return "A側 練習";
+  if (phase === "B") return "B側 練習";
+  return "インターバル";
+}
+
+export default function TimerPage() {
+  // 設定（分）
+  const [aMin, setAMin] = useState(7);
+  const [restMin, setRestMin] = useState(1);
+  const [bMin, setBMin] = useState(7);
+  const [sets, setSets] = useState(6);
+
+  // 状態
+  const [running, setRunning] = useState(false);
+  const [setIndex, setSetIndex] = useState(1);
+  const [phase, setPhase] = useState<Phase>("A");
+  const [remainSec, setRemainSec] = useState(7 * 60);
+
+  const tickRef = useRef<number | null>(null);
+
+  const plan = useMemo(() => {
+    const a = Math.max(1, Math.floor(aMin)) * 60;
+    const r = Math.max(0, Math.floor(restMin)) * 60;
+    const b = Math.max(1, Math.floor(bMin)) * 60;
+    return { a, r, b };
+  }, [aMin, restMin, bMin]);
+
+  // phaseが変わったら残り時間をセット
+  useEffect(() => {
+    if (phase === "A") setRemainSec(plan.a);
+    if (phase === "REST1") setRemainSec(plan.r);
+    if (phase === "B") setRemainSec(plan.b);
+    if (phase === "REST2") setRemainSec(plan.r);
+  }, [phase, plan]);
+
+  // running中は1秒ごとに減らす
+  useEffect(() => {
+    if (!running) return;
+
+    tickRef.current = window.setInterval(() => {
+      setRemainSec((s) => s - 1);
+    }, 1000);
+
+    return () => {
+      if (tickRef.current) window.clearInterval(tickRef.current);
+      tickRef.current = null;
+    };
+  }, [running]);
+
+  // 0になったら次のフェーズへ
+  useEffect(() => {
+    if (!running) return;
+    if (remainSec > 0) return;
+
+    // 次フェーズ
+    const next = nextPhase(phase);
+    if (next === "A") {
+      // 1セット終わった（REST2→A に戻るタイミング）
+      if (setIndex >= sets) {
+        setRunning(false);
+        return;
+      }
+      setSetIndex((x) => x + 1);
+    }
+    setPhase(next);
+  }, [remainSec, running, phase, setIndex, sets]);
+
+  function nextPhase(p: Phase): Phase {
+    if (p === "A") return "REST1";
+    if (p === "REST1") return "B";
+    if (p === "B") return "REST2";
+    return "A";
+  }
+
+  function start() {
+    setRunning(true);
+  }
+
+  function pause() {
+    setRunning(false);
+  }
+
+  function next() {
+    // 手動で次に進める
+    const next = nextPhase(phase);
+    if (next === "A") {
+      if (setIndex >= sets) {
+        setRunning(false);
+        return;
+      }
+      setSetIndex((x) => x + 1);
+    }
+    setPhase(next);
+  }
+
+  function reset() {
+    setRunning(false);
+    setSetIndex(1);
+    setPhase("A");
+    setRemainSec(plan.a);
+  }
+
+  const title = label(phase);
+
+  return (
+    <main style={{ padding: 24, maxWidth: 760, margin: "0 auto" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <h1 style={{ fontSize: 24, fontWeight: 700 }}>卓球タイマー</h1>
+        <Link href="/" style={{ color: "#555", textDecoration: "underline" }}>
+          記録に戻る
+        </Link>
+      </div>
+
+      <section style={{ marginTop: 16, padding: 16, border: "1px solid #ddd", borderRadius: 12 }}>
+        <div style={{ fontSize: 14, color: "#555" }}>
+          セット {setIndex} / {sets}
+        </div>
+
+        <div style={{ marginTop: 8, fontSize: 18, fontWeight: 700 }}>{title}</div>
+
+        <div style={{ marginTop: 10, fontSize: 64, fontWeight: 700, letterSpacing: 2 }}>
+          {fmt(Math.max(0, remainSec))}
+        </div>
+
+        <div style={{ display: "flex", gap: 10, marginTop: 12 }}>
+          {!running ? (
+            <button
+              style={{ padding: "10px 14px", borderRadius: 10, border: "1px solid #000", background: "#000", color: "#fff" }}
+              onClick={start}
+            >
+              開始
+            </button>
+          ) : (
+            <button
+              style={{ padding: "10px 14px", borderRadius: 10, border: "1px solid #000", background: "#fff", color: "#000" }}
+              onClick={pause}
+            >
+              一時停止
+            </button>
+          )}
+
+          <button
+            style={{ padding: "10px 14px", borderRadius: 10, border: "1px solid #ddd", background: "#fff" }}
+            onClick={next}
+          >
+            次へ
+          </button>
+
+          <button
+            style={{ padding: "10px 14px", borderRadius: 10, border: "1px solid #ddd", background: "#fff" }}
+            onClick={reset}
+          >
+            リセット
+          </button>
+        </div>
+
+        <div style={{ marginTop: 14, color: "#555", fontSize: 13 }}>
+          使い方：A練習 → 休憩 → B練習 → 休憩 を自動で回します（手動で次にも進めます）
+        </div>
+      </section>
+
+      <section style={{ marginTop: 16, padding: 16, border: "1px solid #ddd", borderRadius: 12 }}>
+        <h2 style={{ fontSize: 16, fontWeight: 700 }}>設定（分）</h2>
+
+        <div style={{ display: "grid", gap: 10, marginTop: 12 }}>
+          <label>
+            A側 練習
+            <input
+              style={{ display: "block", width: "100%", padding: 10, marginTop: 6 }}
+              type="number"
+              min={1}
+              value={aMin}
+              onChange={(e) => setAMin(parseInt(e.target.value || "1", 10))}
+            />
+          </label>
+
+          <label>
+            インターバル
+            <input
+              style={{ display: "block", width: "100%", padding: 10, marginTop: 6 }}
+              type="number"
+              min={0}
+              value={restMin}
+              onChange={(e) => setRestMin(parseInt(e.target.value || "0", 10))}
+            />
+          </label>
+
+          <label>
+            B側 練習
+            <input
+              style={{ display: "block", width: "100%", padding: 10, marginTop: 6 }}
+              type="number"
+              min={1}
+              value={bMin}
+              onChange={(e) => setBMin(parseInt(e.target.value || "1", 10))}
+            />
+          </label>
+
+          <label>
+            セット数
+            <input
+              style={{ display: "block", width: "100%", padding: 10, marginTop: 6 }}
+              type="number"
+              min={1}
+              value={sets}
+              onChange={(e) => setSets(parseInt(e.target.value || "1", 10))}
+            />
+          </label>
+        </div>
+      </section>
+    </main>
+  );
+}
