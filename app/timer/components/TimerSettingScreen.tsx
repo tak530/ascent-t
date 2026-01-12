@@ -3,7 +3,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import { useTimer } from "@/app/context/TimerContext";
-import ResetIcon from "@/app/Reset.png";
+import ResetIcon from "@/public/Reset.png";
 
 const SIZE = 264;
 const STROKE_PRACTICE = 16;

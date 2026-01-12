@@ -3,7 +3,7 @@ import "./globals.css";
 import { TimerProvider } from "./context/TimerContext";
 import BottomTab from "./components/BottomTab";
 import Image from "next/image";
-import AppLogo from "@/app/Ascent-tアプリロゴ.png";
+import AppLogo from "@/public/app-logo.png";
 
 export const viewport = {
   width: "device-width",
