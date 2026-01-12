@@ -75,6 +75,9 @@ export default function TimerSettingScreen() {
   const svgRef = useRef<SVGSVGElement | null>(null);
   const alarmRef = useRef<HTMLAudioElement | null>(null);
   const alarmTimeoutRef = useRef<number | null>(null);
+  const countdownRef = useRef<HTMLAudioElement | null>(null);
+  const practiceStartRef = useRef<HTMLAudioElement | null>(null);
+  const practiceStartTimeoutRef = useRef<number | null>(null);
 
   const [mounted, setMounted] = useState(false);
   useEffect(() => {
@@ -86,9 +89,19 @@ export default function TimerSettingScreen() {
     alarmRef.current = new Audio("/alarm.mp3");
     alarmRef.current.loop = true;
     alarmRef.current.preload = "auto";
+    countdownRef.current = new Audio("/clipped-countdown.m4a");
+    countdownRef.current.loop = true;
+    countdownRef.current.preload = "auto";
+    practiceStartRef.current = new Audio("/churchmodified.m4a");
+    practiceStartRef.current.loop = false;
+    practiceStartRef.current.preload = "auto";
     return () => {
       alarmRef.current?.pause();
       alarmRef.current = null;
+      countdownRef.current?.pause();
+      countdownRef.current = null;
+      practiceStartRef.current?.pause();
+      practiceStartRef.current = null;
     };
   }, [mounted]);
 
@@ -128,6 +141,7 @@ export default function TimerSettingScreen() {
   const [remainingSec, setRemainingSec] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
   const [isAlarmPlaying, setIsAlarmPlaying] = useState(false);
+  const [isCountdownPlaying, setIsCountdownPlaying] = useState(false);
 
   const practiceTime = angleToTime(practiceAngle);
   const restTime = angleToTime(restAngle);
@@ -175,8 +189,54 @@ export default function TimerSettingScreen() {
     setIsAlarmPlaying(false);
   }
 
-  function playAlarm() {
+  function stopPracticeStart() {
+    if (practiceStartTimeoutRef.current) {
+      window.clearTimeout(practiceStartTimeoutRef.current);
+      practiceStartTimeoutRef.current = null;
+    }
+    if (practiceStartRef.current) {
+      practiceStartRef.current.pause();
+      practiceStartRef.current.currentTime = 0;
+    }
+  }
+
+  function stopCountdown() {
+    if (countdownRef.current) {
+      countdownRef.current.pause();
+      countdownRef.current.currentTime = 0;
+    }
+    setIsCountdownPlaying(false);
+  }
+
+  function playCountdown() {
+    if (!countdownRef.current) return;
+    countdownRef.current.currentTime = 0;
+    const playPromise = countdownRef.current.play();
+    if (playPromise) {
+      playPromise.catch(() => {});
+    }
+    setIsCountdownPlaying(true);
+  }
+
+  function playPracticeStart() {
+    stopPracticeStart();
     stopAlarm();
+    stopCountdown();
+    if (!practiceStartRef.current) return;
+    practiceStartRef.current.currentTime = 0;
+    const playPromise = practiceStartRef.current.play();
+    if (playPromise) {
+      playPromise.catch(() => {});
+    }
+    practiceStartTimeoutRef.current = window.setTimeout(() => {
+      stopPracticeStart();
+    }, 10000);
+  }
+
+  function playAlarm(durationMs = 15000) {
+    stopAlarm();
+    stopCountdown();
+    stopPracticeStart();
     if (!alarmRef.current) return;
     alarmRef.current.currentTime = 0;
     const playPromise = alarmRef.current.play();
@@ -186,25 +246,52 @@ export default function TimerSettingScreen() {
     setIsAlarmPlaying(true);
     alarmTimeoutRef.current = window.setTimeout(() => {
       stopAlarm();
-    }, 15000);
+    }, durationMs);
   }
 
   useEffect(() => {
-    if (phase !== "running") stopAlarm();
+    if (phase !== "running") {
+      stopAlarm();
+      stopCountdown();
+      stopPracticeStart();
+    }
   }, [phase]);
+
+  useEffect(() => {
+    if (phase !== "running") return;
+    if (isPaused) {
+      if (isCountdownPlaying) stopCountdown();
+      return;
+    }
+    if (remainingSec <= 0) {
+      if (isCountdownPlaying) stopCountdown();
+      return;
+    }
+    if (remainingSec <= 10 && !isCountdownPlaying) {
+      playCountdown();
+    }
+    if (remainingSec > 10 && isCountdownPlaying) {
+      stopCountdown();
+    }
+  }, [phase, remainingSec, isPaused, isCountdownPlaying]);
 
   useEffect(() => {
     if (phase !== "running") return;
     if (isPaused) return;
 
     if (remainingSec <= 0) {
-      playAlarm();
+      if (currentMode === "practice") {
+        playAlarm(10000);
+      }
       if (segmentIndex < 3) {
         const nextIndex = segmentIndex + 1;
         const nextMode = getModeForSegment(nextIndex);
         setSegmentIndex(nextIndex);
         setCurrentMode(nextMode);
         setRemainingSec(getDurationForSegment(nextIndex));
+        if (nextMode === "practice" && nextIndex === 2) {
+          playPracticeStart();
+        }
         return;
       }
       if (currentSet < setCount) {
@@ -305,6 +392,9 @@ export default function TimerSettingScreen() {
       setCurrentMode(nextMode);
       setRemainingSec(getDurationForSegment(nextIndex));
       setIsPaused(false);
+      if (nextMode === "practice" && nextIndex === 2) {
+        playPracticeStart();
+      }
       return;
     }
     if (currentSet < setCount) {
