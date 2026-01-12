@@ -7,20 +7,13 @@ import ResetIcon from "@/public/Reset.png";
 
 const SIZE = 264;
 const STROKE_PRACTICE = 16;
-const STROKE_REST = 9;
+const STROKE_REST = STROKE_PRACTICE;
 const RADIUS = 108;
 const CENTER = SIZE / 2;
 const CIRCUMFERENCE = 2 * Math.PI * RADIUS;
 const SETTINGS_KEY = "ascent.timer.defaults.v1";
 const DEFAULT_PRACTICE_SEC = 5 * 60;
 const DEFAULT_REST_SEC = 2 * 60;
-
-function angleFromPoint(x: number, y: number) {
-  const dx = x - CENTER;
-  const dy = y - CENTER;
-  let angle = Math.atan2(dy, dx) * (180 / Math.PI);
-  return angle < 0 ? angle + 360 : angle;
-}
 
 function angleToTime(angle: number) {
   const rawSeconds = Math.round((angle / 360) * 60 * 10);
@@ -34,12 +27,11 @@ function angleToTime(angle: number) {
   };
 }
 
-function pointOnCircle(angleDeg: number, radius: number) {
-  const rad = (angleDeg * Math.PI) / 180;
-  return {
-    x: CENTER + radius * Math.cos(rad),
-    y: CENTER + radius * Math.sin(rad),
-  };
+function angleFromPoint(x: number, y: number) {
+  const dx = x - CENTER;
+  const dy = y - CENTER;
+  let angle = Math.atan2(dy, dx) * (180 / Math.PI);
+  return angle < 0 ? angle + 360 : angle;
 }
 
 function timeToAngle(totalSec: number) {
@@ -130,25 +122,23 @@ export default function TimerSettingScreen() {
     setRestAngle(timeToAngle(restSec));
   }, []);
 
-  const [dragTarget, setDragTarget] = useState<"practice" | "rest" | null>(null);
-  const [startPointerAngle, setStartPointerAngle] = useState(0);
-  const [startArcAngle, setStartArcAngle] = useState(0);
-
   const [currentMode, setCurrentMode] = useState<"practice" | "rest">("practice");
   const [segmentIndex, setSegmentIndex] = useState(0);
-  const [setCount, setSetCount] = useState(1);
+  const [setCount, setSetCount] = useState(2);
   const [currentSet, setCurrentSet] = useState(1);
   const [remainingSec, setRemainingSec] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
   const [isAlarmPlaying, setIsAlarmPlaying] = useState(false);
   const [isCountdownPlaying, setIsCountdownPlaying] = useState(false);
+  const [dragTarget, setDragTarget] = useState<"practice" | "rest" | null>(null);
+  const [startPointerAngle, setStartPointerAngle] = useState(0);
+  const [startArcAngle, setStartArcAngle] = useState(0);
 
   const practiceTime = angleToTime(practiceAngle);
   const restTime = angleToTime(restAngle);
 
   const practiceSec = practiceTime.min * 60 + practiceTime.sec;
   const restSec = restTime.min * 60 + restTime.sec;
-  const totalSec = (practiceSec * 2 + restSec * 2) * setCount;
   const maxSec = 60 * 10;
   const practicePercent = (practiceSec / maxSec) * 100;
   const restPercent = (restSec / maxSec) * 100;
@@ -327,8 +317,6 @@ export default function TimerSettingScreen() {
 
   const practiceOffset = CIRCUMFERENCE - (practiceAngle / 360) * CIRCUMFERENCE;
   const restOffset = CIRCUMFERENCE - (restAngle / 360) * CIRCUMFERENCE;
-  const practiceHandle = pointOnCircle(-90 + practiceAngle, RADIUS);
-  const restHandle = pointOnCircle(-90 + practiceAngle + restAngle, RADIUS);
 
   function beginDrag(target: "practice" | "rest", e: React.PointerEvent<SVGCircleElement>) {
     if (phase !== "setting") return;
@@ -338,7 +326,6 @@ export default function TimerSettingScreen() {
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
     const mirroredX = rect.width - x;
-
     const pointerAngle = angleFromPoint(mirroredX, y);
 
     setDragTarget(target);
@@ -357,7 +344,6 @@ export default function TimerSettingScreen() {
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
     const mirroredX = rect.width - x;
-
     const currentPointerAngle = angleFromPoint(mirroredX, y);
     const diff = shortestAngleDiff(currentPointerAngle, startPointerAngle);
     const nextAngle = normalizeAngle(startArcAngle + diff);
@@ -412,7 +398,7 @@ export default function TimerSettingScreen() {
     const { practiceSec: nextPractice, restSec: nextRest } = getStoredDefaults();
     setPracticeAngle(timeToAngle(nextPractice));
     setRestAngle(timeToAngle(nextRest));
-    setSetCount(1);
+    setSetCount(2);
   }
 
   if (phase === "running") {
@@ -475,19 +461,30 @@ export default function TimerSettingScreen() {
                 />
               </filter>
             </defs>
+            <circle
+              cx={CENTER}
+              cy={CENTER}
+              r={RADIUS + 20}
+              stroke="rgba(148, 163, 184, 0.6)"
+              strokeWidth={2}
+              fill="none"
+            />
             {[...Array(12)].map((_, i) => {
               const a = (i / 12) * 2 * Math.PI;
-              const x = CENTER + Math.cos(a) * (RADIUS + 18);
-              const y = CENTER + Math.sin(a) * (RADIUS + 18);
+              const x1 = CENTER + Math.cos(a) * (RADIUS + 14);
+              const y1 = CENTER + Math.sin(a) * (RADIUS + 14);
+              const x2 = CENTER + Math.cos(a) * (RADIUS + 26);
+              const y2 = CENTER + Math.sin(a) * (RADIUS + 26);
               return (
-                <circle
+                <line
                   key={i}
-                  cx={x}
-                  cy={y}
-                  r={3}
-                  fill="rgba(148, 163, 184, 0.2)"
-                  stroke="rgba(148, 163, 184, 0.5)"
-                  strokeWidth={0.75}
+                  x1={x1}
+                  y1={y1}
+                  x2={x2}
+                  y2={y2}
+                  stroke="rgba(148, 163, 184, 0.7)"
+                  strokeWidth={2}
+                  strokeLinecap="round"
                 />
               );
             })}
@@ -630,7 +627,7 @@ export default function TimerSettingScreen() {
               fill="currentColor"
               aria-hidden="true"
             >
-              <path d="M8 5l11 7-11 7V5z" />
+              <path d="M3 5l8 7-8 7V5zM13 5l8 7-8 7V5z" />
             </svg>
           </button>
         </div>
@@ -703,8 +700,37 @@ export default function TimerSettingScreen() {
           height: SIZE,
           display: "grid",
           placeItems: "center",
+          marginTop: 8,
         }}
       >
+        <div
+          style={{
+            position: "absolute",
+            top: -18,
+            left: "50%",
+            transform: "translateX(-50%)",
+            width: 54,
+            height: 18,
+            borderRadius: 10,
+            background: "#94a3b8",
+            border: "1px solid rgba(71, 85, 105, 0.8)",
+            boxShadow: "var(--shadow-soft)",
+          }}
+        />
+        <div
+          style={{
+            position: "absolute",
+            top: -6,
+            left: "50%",
+            transform: "translateX(-50%)",
+            width: 16,
+            height: 16,
+            borderRadius: "50%",
+            background: "#cbd5e1",
+            border: "1px solid rgba(71, 85, 105, 0.8)",
+            boxShadow: "var(--shadow-soft)",
+          }}
+        />
         <svg
           ref={svgRef}
           width={SIZE}
@@ -716,15 +742,15 @@ export default function TimerSettingScreen() {
           style={{ touchAction: "none", transform: "scaleX(-1)" }}
         >
           <defs>
-            <linearGradient id="ringOrange" x1="0" y1="0" x2="1" y2="1">
+            <linearGradient id="ringOrangeSetting" x1="0" y1="0" x2="1" y2="1">
               <stop offset="0%" stopColor="var(--brand-orange)" />
               <stop offset="100%" stopColor="var(--brand-orange-600)" />
             </linearGradient>
-            <linearGradient id="ringBlue" x1="1" y1="0" x2="0" y2="1">
+            <linearGradient id="ringBlueSetting" x1="1" y1="0" x2="0" y2="1">
               <stop offset="0%" stopColor="var(--brand-blue)" />
               <stop offset="100%" stopColor="var(--brand-blue-600)" />
             </linearGradient>
-            <filter id="glowOrange" x="-50%" y="-50%" width="200%" height="200%">
+            <filter id="glowOrangeSetting" x="-50%" y="-50%" width="200%" height="200%">
               <feDropShadow
                 dx="0"
                 dy="8"
@@ -733,7 +759,7 @@ export default function TimerSettingScreen() {
                 floodOpacity="0.45"
               />
             </filter>
-            <filter id="glowBlue" x="-50%" y="-50%" width="200%" height="200%">
+            <filter id="glowBlueSetting" x="-50%" y="-50%" width="200%" height="200%">
               <feDropShadow
                 dx="0"
                 dy="8"
@@ -743,19 +769,31 @@ export default function TimerSettingScreen() {
               />
             </filter>
           </defs>
+
+          <circle
+            cx={CENTER}
+            cy={CENTER}
+            r={RADIUS + 20}
+            stroke="rgba(148, 163, 184, 0.6)"
+            strokeWidth={2}
+            fill="none"
+          />
           {[...Array(12)].map((_, i) => {
             const a = (i / 12) * 2 * Math.PI;
-            const x = CENTER + Math.cos(a) * (RADIUS + 18);
-            const y = CENTER + Math.sin(a) * (RADIUS + 18);
+            const x1 = CENTER + Math.cos(a) * (RADIUS + 14);
+            const y1 = CENTER + Math.sin(a) * (RADIUS + 14);
+            const x2 = CENTER + Math.cos(a) * (RADIUS + 26);
+            const y2 = CENTER + Math.sin(a) * (RADIUS + 26);
             return (
-              <circle
+              <line
                 key={i}
-                cx={x}
-                cy={y}
-                r={3}
-                fill="rgba(148, 163, 184, 0.2)"
-                stroke="rgba(148, 163, 184, 0.5)"
-                strokeWidth={0.75}
+                x1={x1}
+                y1={y1}
+                x2={x2}
+                y2={y2}
+                stroke="rgba(148, 163, 184, 0.7)"
+                strokeWidth={2}
+                strokeLinecap="round"
               />
             );
           })}
@@ -764,51 +802,30 @@ export default function TimerSettingScreen() {
             cx={CENTER}
             cy={CENTER}
             r={RADIUS}
-            stroke="url(#ringOrange)"
+            stroke="url(#ringOrangeSetting)"
             strokeWidth={STROKE_PRACTICE}
             fill="none"
             strokeDasharray={CIRCUMFERENCE}
             strokeDashoffset={practiceOffset}
             strokeLinecap="round"
             transform={`rotate(-90 ${CENTER} ${CENTER})`}
+            filter="url(#glowOrangeSetting)"
             onPointerDown={(e) => beginDrag("practice", e)}
-            filter="url(#glowOrange)"
           />
 
           <circle
             cx={CENTER}
             cy={CENTER}
             r={RADIUS}
-            stroke="url(#ringBlue)"
+            stroke="url(#ringBlueSetting)"
             strokeWidth={STROKE_REST}
             fill="none"
             strokeDasharray={CIRCUMFERENCE}
             strokeDashoffset={restOffset}
             strokeLinecap="round"
             transform={`rotate(${practiceAngle - 90} ${CENTER} ${CENTER})`}
+            filter="url(#glowBlueSetting)"
             onPointerDown={(e) => beginDrag("rest", e)}
-            filter="url(#glowBlue)"
-          />
-
-          <circle
-            cx={practiceHandle.x}
-            cy={practiceHandle.y}
-            r={16}
-            fill="transparent"
-            stroke="transparent"
-            onPointerDown={(e) => beginDrag("practice", e)}
-            style={{ cursor: "pointer" }}
-            aria-hidden="true"
-          />
-          <circle
-            cx={restHandle.x}
-            cy={restHandle.y}
-            r={16}
-            fill="transparent"
-            stroke="transparent"
-            onPointerDown={(e) => beginDrag("rest", e)}
-            style={{ cursor: "pointer" }}
-            aria-hidden="true"
           />
         </svg>
         <div
@@ -825,53 +842,66 @@ export default function TimerSettingScreen() {
         >
           <div
             style={{
-              fontSize: 12,
-              fontWeight: 800,
-              letterSpacing: "0.08em",
-              color: "var(--brand-blue)",
-            }}
-          >
-            TOTAL
-          </div>
-          <div
-            style={{
               fontSize: 45,
               fontWeight: 800,
               color: "var(--text)",
-              marginTop: 2,
             }}
           >
-            {formatMMSS(totalSec)}
+            {formatMMSS(practiceSec + restSec)}
+          </div>
+          <div
+            style={{
+              marginTop: 4,
+              fontSize: 11,
+              color: "rgba(100, 116, 139, 0.8)",
+              letterSpacing: "0.04em",
+            }}
+          >
+            合計 {formatMMSS((practiceSec + restSec) * setCount)}
           </div>
         </div>
       </div>
-
       <div
         style={{
           width: "100%",
-          maxWidth: 160,
-          borderRadius: 16,
-          padding: "12px 14px",
-          background: "var(--surface)",
-          border: "1px solid var(--border)",
-          boxShadow: "var(--shadow-soft)",
+          maxWidth: 360,
           display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          gap: 8,
-          marginTop: -18,
-          alignSelf: "flex-end",
+          justifyContent: "flex-end",
+          paddingRight: 12,
+          marginTop: 8,
         }}
       >
-        <div style={{ fontSize: 12, fontWeight: 700 }}>セット数</div>
-        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+        <div
+          style={{
+            display: "grid",
+            justifyItems: "center",
+            gap: 6,
+          }}
+        >
+          <div
+            style={{
+              fontSize: 13,
+              fontWeight: 700,
+              color: "var(--muted)",
+              textAlign: "center",
+            }}
+          >
+            セット数
+          </div>
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 8,
+            }}
+          >
           <button
             type="button"
             onClick={() => setSetCount((prev) => clampSetCount(prev - 1))}
             className="adjust-button"
             style={{
-              width: 28,
-              height: 28,
+              width: 30,
+              height: 30,
               borderRadius: 999,
               border: "1px solid #111",
               background: "rgba(0, 0, 0, 0.06)",
@@ -883,7 +913,15 @@ export default function TimerSettingScreen() {
           >
             −
           </button>
-          <div style={{ minWidth: 30, textAlign: "center", fontWeight: 800 }}>
+          <div
+            style={{
+              minWidth: 30,
+              textAlign: "center",
+              justifySelf: "center",
+              fontWeight: 800,
+              fontSize: 16,
+            }}
+          >
             {setCount}
           </div>
           <button
@@ -891,8 +929,8 @@ export default function TimerSettingScreen() {
             onClick={() => setSetCount((prev) => clampSetCount(prev + 1))}
             className="adjust-button"
             style={{
-              width: 28,
-              height: 28,
+              width: 30,
+              height: 30,
               borderRadius: 999,
               border: "1px solid #111",
               background: "rgba(0, 0, 0, 0.06)",
@@ -904,6 +942,7 @@ export default function TimerSettingScreen() {
           >
             +
           </button>
+        </div>
         </div>
       </div>
 
@@ -924,8 +963,35 @@ export default function TimerSettingScreen() {
           border: "1px solid var(--border-orange)",
           boxShadow: "var(--shadow-soft)",
           textAlign: "center",
+          position: "relative",
         }}
       >
+          <button
+            onClick={resetToDefaults}
+            className="press-button"
+            style={{
+              position: "absolute",
+              top: -70,
+              left: 12,
+              width: 70,
+              height: 70,
+              borderRadius: 17,
+              border: "1px solid var(--border)",
+              background: "var(--surface)",
+              boxShadow: "var(--shadow-soft)",
+              display: "grid",
+              placeItems: "center",
+            }}
+            aria-label="デフォルトに戻す"
+          >
+            <Image
+              src={ResetIcon}
+              alt=""
+              width={66}
+              height={66}
+              style={{ display: "block" }}
+            />
+          </button>
           <div
             style={{
               display: "grid",
@@ -977,7 +1043,7 @@ export default function TimerSettingScreen() {
                     whiteSpace: "nowrap",
                   }}
                 >
-                  {formatMMSS(practiceSec)}
+                  練習 {formatMMSS(practiceSec)}
                 </div>
                 <input
                   type="range"
@@ -1054,7 +1120,7 @@ export default function TimerSettingScreen() {
                   fontWeight: 700,
                   color: "#111",
                 }}
-                aria-label="休憩時間を30秒減らす"
+                aria-label="インターバル時間を30秒減らす"
               >
                 −
               </button>
@@ -1077,7 +1143,7 @@ export default function TimerSettingScreen() {
                     whiteSpace: "nowrap",
                   }}
                 >
-                  {formatMMSS(restSec)}
+                  インターバル {formatMMSS(restSec)}
                 </div>
                 <input
                   type="range"
@@ -1092,7 +1158,7 @@ export default function TimerSettingScreen() {
                   style={{
                     ["--slider-fill" as any]: `${restPercent}%`,
                   }}
-                  aria-label="休憩時間を調整"
+                  aria-label="インターバル時間を調整"
                 />
               </div>
               <button
@@ -1109,7 +1175,7 @@ export default function TimerSettingScreen() {
                   fontWeight: 700,
                   color: "#111",
                 }}
-                aria-label="休憩時間を30秒増やす"
+                aria-label="インターバル時間を30秒増やす"
               >
                 +
               </button>
@@ -1137,38 +1203,6 @@ export default function TimerSettingScreen() {
         }}
       >
         スタート
-      </button>
-      <button
-        onClick={resetToDefaults}
-        className="press-button"
-        style={{
-          width: 62,
-          height: 62,
-          borderRadius: 14,
-          border: "1px solid var(--border)",
-          background: "var(--surface)",
-          color: "#111827",
-          boxShadow: "var(--shadow-soft)",
-          fontSize: 14,
-          fontWeight: 700,
-          letterSpacing: 0.04,
-          display: "grid",
-          placeItems: "center",
-          position: "absolute",
-          left: 20,
-          top: "34%",
-          transform: "translateY(-50%)",
-          zIndex: 2,
-        }}
-        aria-label="デフォルトに戻す"
-      >
-        <Image
-          src={ResetIcon}
-          alt=""
-          width={70}
-          height={70}
-          style={{ display: "block" }}
-        />
       </button>
     </main>
   );
