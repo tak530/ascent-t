@@ -736,7 +736,7 @@ export default function TimerSettingScreen() {
           <div
             style={{
               fontSize: 12,
-              fontWeight: 700,
+              fontWeight: 800,
               letterSpacing: "0.08em",
               color: "var(--brand-blue)",
             }}

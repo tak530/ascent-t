@@ -136,167 +136,214 @@ export default function SettingsPage() {
         設定
       </h1>
 
-      <div style={{ display: "grid", gap: 16, maxWidth: 360 }}>
-        <div>
-          <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 8 }}>
-            練習時間
-          </div>
-          <div style={{ display: "flex", gap: 8 }}>
-            <select
-              value={practiceMin}
-              onChange={(e) => setPracticeMin(Number(e.target.value))}
-            >
-              {Array.from({ length: 11 }, (_, i) => (
-                <option key={i} value={i}>
-                  {i}分
-                </option>
-              ))}
-            </select>
-            <select
-              value={practiceSec}
-              onChange={(e) => setPracticeSec(Number(e.target.value))}
-            >
-              <option value={0}>00秒</option>
-              <option value={30}>30秒</option>
-            </select>
-          </div>
-        </div>
-
-        <div>
-          <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 8 }}>
-            休憩時間
-          </div>
-          <div style={{ display: "flex", gap: 8 }}>
-            <select
-              value={restMin}
-              onChange={(e) => setRestMin(Number(e.target.value))}
-            >
-              {Array.from({ length: 11 }, (_, i) => (
-                <option key={i} value={i}>
-                  {i}分
-                </option>
-              ))}
-            </select>
-            <select value={restSec} onChange={(e) => setRestSec(Number(e.target.value))}>
-              <option value={0}>00秒</option>
-              <option value={30}>30秒</option>
-            </select>
-          </div>
-        </div>
-
-        <div style={{ fontSize: 13, color: "var(--muted)" }}>
-          合計 {formatMMSS(totalSec)}
-        </div>
-
-        <button
-          className="cta-button"
-          onClick={handleSave}
+      <details
+        style={{
+          border: "1px solid var(--border)",
+          borderRadius: 16,
+          padding: 12,
+          background: "var(--surface)",
+          maxWidth: 360,
+        }}
+      >
+        <summary
           style={{
-            height: 48,
-            borderRadius: 999,
-            border: "none",
-            background: "var(--blue-gradient)",
-            color: "#fff",
+            cursor: "pointer",
+            listStyle: "none",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
             fontSize: 16,
             fontWeight: 700,
-            boxShadow: "var(--shadow-pill)",
-            letterSpacing: 0.02,
           }}
         >
-          保存
-        </button>
-        {saved && <div style={{ fontSize: 12, color: "#16a34a" }}>保存しました</div>}
-      </div>
+          時間
+          <span style={{ fontSize: 14, color: "var(--muted)" }}>▼</span>
+        </summary>
+        <div style={{ display: "grid", gap: 16, marginTop: 12 }}>
+          <div>
+            <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 8 }}>
+              練習時間
+            </div>
+            <div style={{ display: "flex", gap: 8 }}>
+              <select
+                value={practiceMin}
+                onChange={(e) => setPracticeMin(Number(e.target.value))}
+              >
+                {Array.from({ length: 11 }, (_, i) => (
+                  <option key={i} value={i}>
+                    {i}分
+                  </option>
+                ))}
+              </select>
+              <select
+                value={practiceSec}
+                onChange={(e) => setPracticeSec(Number(e.target.value))}
+              >
+                <option value={0}>00秒</option>
+                <option value={30}>30秒</option>
+              </select>
+            </div>
+          </div>
+
+          <div>
+            <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 8 }}>
+              休憩時間
+            </div>
+            <div style={{ display: "flex", gap: 8 }}>
+              <select
+                value={restMin}
+                onChange={(e) => setRestMin(Number(e.target.value))}
+              >
+                {Array.from({ length: 11 }, (_, i) => (
+                  <option key={i} value={i}>
+                    {i}分
+                  </option>
+                ))}
+              </select>
+              <select value={restSec} onChange={(e) => setRestSec(Number(e.target.value))}>
+                <option value={0}>00秒</option>
+                <option value={30}>30秒</option>
+              </select>
+            </div>
+          </div>
+
+          <div style={{ fontSize: 13, color: "var(--muted)" }}>
+            合計 {formatMMSS(totalSec)}
+          </div>
+
+          <button
+            className="cta-button"
+            onClick={handleSave}
+            style={{
+              height: 48,
+              borderRadius: 999,
+              border: "none",
+              background: "var(--blue-gradient)",
+              color: "#fff",
+              fontSize: 16,
+              fontWeight: 700,
+              boxShadow: "var(--shadow-pill)",
+              letterSpacing: 0.02,
+            }}
+          >
+            保存
+          </button>
+          {saved && <div style={{ fontSize: 12, color: "#16a34a" }}>保存しました</div>}
+        </div>
+      </details>
 
       <div style={{ height: 24 }} />
 
-      <div style={{ display: "grid", gap: 16, maxWidth: 520 }}>
-        <div style={{ fontSize: 16, fontWeight: 700 }}>練習メニュー</div>
-        {menus.map((menu, index) => (
-          <div
-            key={menu.id}
-            style={{
-              borderRadius: 16,
-              padding: 14,
-              background: "var(--surface)",
-              border: "1px solid var(--border)",
-              display: "grid",
-              gap: 10,
-            }}
-          >
-            <input
-              value={menu.name}
-              onChange={(e) => updateMenu(index, "name", e.target.value)}
-              placeholder="メニュー名"
-            />
-            <input
-              type="number"
-              value={menu.minutes}
-              onChange={(e) => updateMenu(index, "minutes", e.target.value)}
-              placeholder="時間（分）"
-            />
-            <textarea
-              value={menu.note}
-              onChange={(e) => updateMenu(index, "note", e.target.value)}
-              placeholder="メモ"
-              style={{ minHeight: 80 }}
-            />
-            <button
-              type="button"
-              onClick={() => {
-                if (window.confirm("削除します。よろしいですか？")) {
-                  removeMenu(index);
-                }
-              }}
-              className="cta-button"
-              style={{
-                height: 40,
-                borderRadius: 12,
-                border: "1px solid #dc2626",
-                background: "#ef4444",
-                color: "#fff",
-                fontWeight: 700,
-                boxShadow: "0 8px 14px rgba(239, 68, 68, 0.28)",
-              }}
-            >
-              削除
-            </button>
-          </div>
-        ))}
-
-        <button
-          type="button"
-          onClick={addMenu}
+      <details
+        style={{
+          border: "1px solid var(--border)",
+          borderRadius: 16,
+          padding: 12,
+          background: "var(--surface)",
+          maxWidth: 520,
+        }}
+      >
+        <summary
           style={{
-            height: 44,
-            borderRadius: 12,
-            border: "1px dashed var(--border)",
-            background: "transparent",
-            fontWeight: 700,
-          }}
-        >
-          メニューを追加
-        </button>
-
-        <button
-          className="cta-button"
-          onClick={handleMenuSave}
-          style={{
-            height: 48,
-            borderRadius: 999,
-            border: "none",
-            background: "var(--blue-gradient)",
-            color: "#fff",
+            cursor: "pointer",
+            listStyle: "none",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
             fontSize: 16,
             fontWeight: 700,
-            boxShadow: "var(--shadow-pill)",
-            letterSpacing: 0.02,
           }}
         >
-          練習メニューを保存
-        </button>
-        {menuSaved && <div style={{ fontSize: 12, color: "#16a34a" }}>保存しました</div>}
-      </div>
+          メニュー
+          <span style={{ fontSize: 14, color: "var(--muted)" }}>▼</span>
+        </summary>
+        <div style={{ display: "grid", gap: 16, marginTop: 12 }}>
+          {menus.map((menu, index) => (
+            <div
+              key={menu.id}
+              style={{
+                borderRadius: 16,
+                padding: 14,
+                background: "var(--surface)",
+                border: "1px solid var(--border)",
+                display: "grid",
+                gap: 10,
+              }}
+            >
+              <input
+                value={menu.name}
+                onChange={(e) => updateMenu(index, "name", e.target.value)}
+                placeholder="メニュー名"
+              />
+              <input
+                type="number"
+                value={menu.minutes}
+                onChange={(e) => updateMenu(index, "minutes", e.target.value)}
+                placeholder="時間（分）"
+              />
+              <textarea
+                value={menu.note}
+                onChange={(e) => updateMenu(index, "note", e.target.value)}
+                placeholder="メモ"
+                style={{ minHeight: 80 }}
+              />
+              <button
+                type="button"
+                onClick={() => {
+                  if (window.confirm("削除します。よろしいですか？")) {
+                    removeMenu(index);
+                  }
+                }}
+                className="cta-button"
+                style={{
+                  height: 40,
+                  borderRadius: 12,
+                  border: "1px solid #dc2626",
+                  background: "#ef4444",
+                  color: "#fff",
+                  fontWeight: 700,
+                  boxShadow: "0 8px 14px rgba(239, 68, 68, 0.28)",
+                }}
+              >
+                削除
+              </button>
+            </div>
+          ))}
+
+          <button
+            type="button"
+            onClick={addMenu}
+            style={{
+              height: 44,
+              borderRadius: 12,
+              border: "1px dashed var(--border)",
+              background: "transparent",
+              fontWeight: 700,
+            }}
+          >
+            メニューを追加
+          </button>
+
+          <button
+            className="cta-button"
+            onClick={handleMenuSave}
+            style={{
+              height: 48,
+              borderRadius: 999,
+              border: "none",
+              background: "var(--blue-gradient)",
+              color: "#fff",
+              fontSize: 16,
+              fontWeight: 700,
+              boxShadow: "var(--shadow-pill)",
+              letterSpacing: 0.02,
+            }}
+          >
+            練習メニューを保存
+          </button>
+          {menuSaved && <div style={{ fontSize: 12, color: "#16a34a" }}>保存しました</div>}
+        </div>
+      </details>
     </main>
   );
 }

@@ -2,6 +2,8 @@
 import "./globals.css";
 import { TimerProvider } from "./context/TimerContext";
 import BottomTab from "./components/BottomTab";
+import Image from "next/image";
+import AppLogo from "@/app/Ascent-tアプリロゴ.png";
 
 export const viewport = {
   width: "device-width",
@@ -33,15 +35,15 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 gap: 12,
               }}
             >
-              <img
-                src="/app-icon.svg"
-                alt="Ascent"
+              <Image
+                src={AppLogo}
+                alt="Ascent-t"
                 width={32}
                 height={32}
                 style={{ display: "block" }}
               />
               <div style={{ fontWeight: 800, letterSpacing: "0.04em" }}>
-                ASCENT
+                Ascent-t
               </div>
             </div>
           </header>
